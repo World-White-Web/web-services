@@ -12,13 +12,14 @@ include_once '../config/database.php';
 // instantiate userTW object
 include_once '../objects/twitter_user.php';
 include_once '../objects/twitter_user_history.php';
+include_once '../objects/twitter_user_aux.php';
 
 $database = new Database();
 $db = $database->getConnection();
   
 $userTW = new TwitterUser($db);
 $userHistoryTW = new TwitterUserHistory($db);
-
+$userTWAux = new TwitterUserAux($db);
   
 // get posted data
 $data = json_decode(file_get_contents("php://input"));
@@ -42,67 +43,37 @@ $data = json_decode(file_get_contents("php://input"));
         $userHistoryTW->user_credibility = $data->user_credibility;
         $userHistoryTW->extraction_method = $data->extraction_method;
 
-       // $userTW->created_at = date('Y-m-d H:i:s');
-    
-        // create the userTW
-        if($userTW->exist()){    
+        
+        //set userTW property values
+        $userTWAux->id_twitter = $data->id_twitter;
+        $userTWAux->joined_date = $data->joined_date;
 
-            echo 'console.log('. json_encode( $userTW->id ) .')';
-            $userHistoryTW->id_twitter_user = $userTW->id;
-            
-            if($userHistoryTW-> create()){
-                // set response code - 201 created
-                http_response_code(201);
+        $userTWAux->user_name = $data->user_name;
+        $userTWAux->following = $data->following;
+        $userTWAux->followers = $data->followers;
+        $userTWAux->link = $data->link;   
+        $userTWAux->location = $data->location;
+        $userTWAux->verified = $data->verified;
+        $userTWAux->followers_impact = $data->followers_impact;
+        $userTWAux->user_credibility = $data->user_credibility;
+        $userTWAux->extraction_method = $data->extraction_method;
 
-                // Create new record twitter User
-                echo json_encode(array("message" => "User history was created."));
+        if($userTWAux-> create()){
+            // set response code - 201 created
+            http_response_code(201);
 
-            }else{
+            // Create new record twitter User
+            echo json_encode(true);
 
-                http_response_code(503);
-                // Create new record twitter User
-                echo json_encode(array("message" => "Unable create user history."));
+        }else{
 
-            }
-            
+            http_response_code(503);
+            // Create new record twitter User
+            echo json_encode(false);
+
         }
     
-        // if unable to create the userTW, tell the user
-        else{
-            if($userTW->create()){    
-                
-                
-                $userHistoryTW->id_twitter_user = $userTW->id;
-
-
-                if($userHistoryTW-> create()){
-                    // set response code - 201 created
-                    http_response_code(201);
-        
-                    // Create new record twitter User
-                    echo json_encode(array("message" => "User history was created."));
-    
-                }else{
-    
-                    http_response_code(503);
-                    // Create new record twitter User
-                    echo json_encode(array("message" => "Unable create user history."));
-    
-                }
-
-            }else{
-        
-                // set response code - 503 service unavailable
-                http_response_code(503);
-        
-                // tell the user
-                echo json_encode(array("message" => "Unable to create user"));
-                
-            }
-
-        }
-    }
-    
+    }  
     // tell the user data is incomplete
     else{
     

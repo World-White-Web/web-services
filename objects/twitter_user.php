@@ -4,13 +4,22 @@ class TwitterUser{
     private $conn;
     private $table_name = "Twitter_User";
  
+    private $tweet_table = "Tweets";
+
+    private $tweet_history_table = "Tweet_History";
+
     // object properties
     public $id;
     public $id_twitter;
     public $joined_date;
     public $created_at;
+    public $socialCredibility;
+    public $maxRetweets;
+    public $maxFav;
+    public $retweets;
+    public $fav;
 
- 
+
     // constructor with $db as database connection
     public function __construct($db){
         $this->conn = $db;
@@ -33,55 +42,6 @@ class TwitterUser{
     }
 
 
-
-    // create product
-    function create(){
-        
-        $query = "INSERT INTO
-        " . $this->table_name . "
-            SET
-            id_twitter=:id_twitter,joined_date=:joined_date";
-            
-            // prepare query
-        $stmt = $this->conn->prepare($query);
-        
-
-
-        //INSERT INTO employee(user_id,name,address,city) 
-        //VALUES(:user_id,:name,:address,:city) RETURNING employee_id"   
-
-
-        // sanitize
-        //$this->created_at=htmlspecialchars(strip_tags($this->created_at));
-    
-        $this->id_twitter=htmlspecialchars(strip_tags($this->id_twitter));
-        $this->joined_date=htmlspecialchars(strip_tags($this->joined_date));
-    
-        // bind values
-        $stmt->bindParam(':id_twitter', $this->id_twitter);
-        $stmt->bindParam(':joined_date', $this->joined_date);
-        //$stmt->bindParam(':created_at', $this->created_at);
-
-        // $stmt->execute();
-       
-        // $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        // echo 'console.log('. json_encode( $temp ) .')';
-        // return $result["id"];
-
-
-        //execute query
-        if($stmt->execute()){   
-            $this->id = $this->conn->lastInsertId();
-            //echo 'console.log('. json_encode( $this->id ) .')';
-            return true;
-        }
-    
-        return false;
-        
-       
-
-
-    }
 
     function exist(){
 
@@ -122,6 +82,228 @@ class TwitterUser{
     
         return false;
 
-    }   
+    } 
+
+    function consultRetweets(){
+
+        
+        $this->id_twitter=htmlspecialchars(strip_tags($this->id_twitter));
+
+        $query = "SELECT COUNT( DISTINCT c.id) 
+                FROM " . $this->table_name . " p
+                INNER JOIN Tweet c 
+                    ON p.id = c.id_twitter_user 
+                INNER JOIN Tweet_History h 
+                    ON c.id = h.id_tweet 
+                WHERE 
+                    p.id_twitter = ?
+                    AND h.retweets > 0 
+                    AND h.created_at=  (SELECT MAX( x.created_at) 
+                    FROM Tweet_History x
+                        WHERE x.id_tweet= h.id_tweet)
+        ";
+
+
+        // prepare query statement
+        $stmtRow = $this->conn->prepare( $query );
+    
+        // bind id of product to be updated
+        $stmtRow->bindParam(1, $this->id_twitter);
+
+        $stmtRow->execute();
+        
+        // get retrieved row
+        $row = $stmtRow->fetch(PDO::FETCH_ASSOC);
+        
+
+
+        $this->retweets = $row['COUNT( DISTINCT c.id)'];
+        //echo 'console.log('. json_encode( $this ) .')';
+        return $stmtRow;
+
+    }
+
+
+    function consultFav(){
+
+        $this->id_twitter=htmlspecialchars(strip_tags($this->id_twitter));
+ 
+            
+        $query = "SELECT  
+                 COUNT(DISTINCT c.id) FROM Twitter_User p 
+                INNER JOIN Tweet c 
+                    ON p.id = c.id_twitter_user 
+                INNER JOIN Tweet_History h 
+                    ON c.id = h.id_tweet 
+                WHERE 
+                    p.id_twitter = ?
+                    AND h.favorites > 0 
+                    AND h.created_at=  (SELECT MAX( x.created_at) 
+                    FROM Tweet_History x
+                        WHERE x.id_tweet= h.id_tweet)
+
+        ";
+
+
+        // prepare query statement
+        $stmtRow = $this->conn->prepare( $query );
+    
+        // bind id of product to be updated
+        $stmtRow->bindParam(1, $this->id_twitter);
+        
+        $stmtRow->execute();
+        
+        // get retrieved row
+        $row = $stmtRow->fetch(PDO::FETCH_ASSOC);
+    
+        // execute query
+        //echo 'console.log('. json_encode( $row ) .')';
+
+        $this->fav = $row['COUNT(DISTINCT c.id)'];
+        //echo 'console.log('. json_encode( $this ) .')';
+        return $stmtRow;
+    }
+
+    function maxRetweets(){
+
+        
+        $this->id_twitter=htmlspecialchars(strip_tags($this->id_twitter));
+
+        $query = "SELECT DISTINCT  MAX(h.retweets)  
+                FROM " . $this->table_name . " p
+                INNER JOIN Tweet c 
+                    ON p.id = c.id_twitter_user 
+                INNER JOIN Tweet_History h 
+                    ON c.id = h.id_tweet 
+                WHERE 
+                    p.id_twitter = ?
+                    AND h.created_at=  (SELECT MAX( x.created_at) 
+                    FROM Tweet_History x
+                        WHERE x.id_tweet= h.id_tweet)
+        ";
+
+
+        // prepare query statement
+        $stmtRow = $this->conn->prepare( $query );
+    
+        // bind id of product to be updated
+        $stmtRow->bindParam(1, $this->id_twitter);
+
+        $stmtRow->execute();
+        
+        // get retrieved row
+        $row = $stmtRow->fetch(PDO::FETCH_ASSOC);
+    
+
+        $this->maxRetweets = $row['MAX(h.retweets)'];
+       // echo 'console.log('. json_encode( $this ) .')';
+
+        return $stmtRow;
+    }
+
+    function maxFav(){
+
+        $this->id_twitter=htmlspecialchars(strip_tags($this->id_twitter));
+
+            
+        $query = "SELECT DISTINCT  MAX(h.favorites)  
+                FROM " . $this->table_name . " p
+                INNER JOIN Tweet c 
+                    ON p.id = c.id_twitter_user 
+                INNER JOIN Tweet_History h 
+                    ON c.id = h.id_tweet 
+                WHERE 
+                    p.id_twitter = ?
+                    AND h.created_at=  (SELECT MAX( x.created_at) 
+                    FROM Tweet_History x
+                        WHERE x.id_tweet= h.id_tweet)
+        ";
+
+
+        // prepare query statement
+        $stmtRow = $this->conn->prepare( $query );
+    
+        // bind id of product to be updated
+        $stmtRow->bindParam(1, $this->id_twitter);
+
+        $stmtRow->execute();
+        
+        // get retrieved row
+        $row = $stmtRow->fetch(PDO::FETCH_ASSOC);
+        // execute query
+        // echo 'console.log('. json_encode( $row['MAX(h.favorites)'] ) .')';
+         $this->maxFav = $row['MAX(h.favorites)'];
+         //echo 'console.log('. json_encode( $this ) .')';
+
+        return $stmtRow;
+    }
+
+
+
+    function socialCredibility(){
+        $this->id_twitter=htmlspecialchars(strip_tags($this->id_twitter));
+        
+            $query = "SELECT
+            c.*
+            FROM
+                " . $this->table_name . " p
+                INNER JOIN
+                    Twitter_User_History c
+                        ON p.id = c.id_twitter_user
+            WHERE
+                p.id_twitter = ?
+            ORDER BY c.created_at DESC             
+            LIMIT
+                0,1";
+
+            // prepare query statement
+            $stmtRow = $this->conn->prepare( $query );
+                
+            // bind id of product to be updated
+            $stmtRow->bindParam(1, $this->id_twitter);
+
+            $stmtRow->execute();
+            $row = $stmtRow->fetch(PDO::FETCH_ASSOC);
+            
+            $followers=$row['followers'];
+
+
+
+            $queryTweets = "SELECT COUNT( DISTINCT c.id) 
+                FROM " . $this->table_name . " p
+                INNER JOIN Tweet c 
+                    ON p.id = c.id_twitter_user 
+                WHERE 
+                    p.id_twitter = ?
+            ";
+
+
+            // prepare queryTweets statement
+            $stmttweets = $this->conn->prepare( $queryTweets );
+
+            // bind id of product to be updated
+            $stmttweets->bindParam(1, $this->id_twitter);
+
+            $stmttweets->execute();
+
+            // get retrieved row
+            $rowTweets = $stmttweets->fetch(PDO::FETCH_ASSOC);
+            // echo 'console.log('. json_encode( $rowTweets['COUNT( DISTINCT c.id)'] ) .')';
+            $tweetsNumber= $rowTweets['COUNT( DISTINCT c.id)'];
+            // get retrieved row
+        
+            $this->maxFav();    
+            $this->maxRetweets();
+            $this->consultRetweets();
+            $this->consultFav();
+            
+            
+            $socialCredibility=( ((((int)($this->maxRetweets)+(int)($this->maxFav))/(int)($followers))+(((int)($this->retweets)+(int)($this->fav))/(int)($tweetsNumber)))/2 );
+            $this->socialCredibility =min(array(1, $socialCredibility));
+            //echo 'console.log('. json_encode( $socialCredibility) .')';
+            return (min(array(1, $socialCredibility)));
+
+    }
 }
 ?>
+

@@ -11,39 +11,48 @@ include_once '../config/database.php';
   
 // instantiate tweet object
 include_once '../objects/tweet.php';
+include_once '../objects/tweet_aux.php';
+
   
 $database = new Database();
 $db = $database->getConnection();
   
 $tweet = new Tweet($db);
 
+$tweetAux = new TweetAux($db);
   
 // get posted data
 $data = json_decode(file_get_contents("php://input"));
 
-// make sure data is not empty
+// // make sure data is not empty
     if( 
-        !empty($data->id_twitter_user)  &&
-        !empty($data->text) &&
-        !empty($data->bad_words_filter) &&
-        !empty($data->spam_filter) &&
-        !empty($data->misspelling_filter) &&
+        !empty($data->text) &&        
         !empty($data->extraction_method)
     
     ){
     
         // set userTW property values
-        $tweet->id_twitter_user = $data->id_twitter_user;
-        $tweet->id_tweet_api = $data->id_tweet_api;
-        $tweet->text = $data->text;
-        $tweet->bad_words_filter = $data->bad_words_filter;
-        $tweet->spam_filter = $data->spam_filter;
-        $tweet->misspelling_filter = $data->misspelling_filter;
-        $tweet->extraction_method = $data->extraction_method;
+        //$tweetAux->id_twitter_user = $data->id_twitter_user;
+        $tweetAux->id_tweet_api = $data->id_tweet_api;
+        $tweetAux->text = $data->text;
+        $tweetAux->bad_words_filter = $data->bad_words_filter;
+        $tweetAux->spam_filter = $data->spam_filter;
+        $tweetAux->misspelling_filter = $data->misspelling_filter;
+        $tweetAux->extraction_method = $data->extraction_method;
 
-    
+
+        $tweetAux->tweet_credibility= $data->tweet_credibility;
+        $tweetAux->retweets= $data->retweets ;
+        $tweetAux->favorites= $data->favorites ;
+        $tweetAux->replies= $data->replies;
+
+        $tweetAux->tweet_url=$data->tweet_url;
+        $tweetAux->type=$data->type;
+
+        $tweetAux->userAPIid=$data->userAPIid;
+        
         // create the tweet
-        if($tweet->create()){
+        if($tweetAux->create()){
     
             // set response code - 201 created
             http_response_code(201);
