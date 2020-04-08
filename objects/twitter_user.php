@@ -264,7 +264,6 @@ class TwitterUser{
 
             $stmtRow->execute();
             $row = $stmtRow->fetch(PDO::FETCH_ASSOC);
-            
             $followers=$row['followers'];
 
 
@@ -296,12 +295,22 @@ class TwitterUser{
             $this->maxRetweets();
             $this->consultRetweets();
             $this->consultFav();
+            $lambdat=1.0/500000;
+
+            $popularity=(min(array(1,1.0-(pow(2.71828,((-1)*$lambdat*$followers))))))*50;
+            $proportion=(min(array(1,((((int)($this->maxRetweets)+(int)($this->maxFav))/(int)($followers))+(((int)($this->retweets)+(int)($this->fav))/(int)($tweetsNumber)))/2 )))*50;
+
+            echo 'console.log('. json_encode( $popularity ) .')';
+            echo 'console.log('. json_encode( $proportion ) .')';
+
             
+            $socialCredibilityProv=$popularity+$proportion;
             
-            $socialCredibility=( ((((int)($this->maxRetweets)+(int)($this->maxFav))/(int)($followers))+(((int)($this->retweets)+(int)($this->fav))/(int)($tweetsNumber)))/2 );
-            $this->socialCredibility =min(array(1, $socialCredibility));
-            //echo 'console.log('. json_encode( $socialCredibility) .')';
-            return (min(array(1, $socialCredibility)));
+            // echo 'console.log('. json_encode( $socialCredibilityProv ) .')';
+
+            $this->socialCredibility = $socialCredibilityProv;
+
+            return $socialCredibilityProv;
 
     }
 }

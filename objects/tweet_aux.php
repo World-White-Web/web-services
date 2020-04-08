@@ -80,7 +80,7 @@ class TweetAux{
                         ON p.id = c.id_tweet
                 WHERE
                     c.text = ? 
-                ORDER BY c.created_at                 
+                ORDER BY c.created_at  DESC            
                 LIMIT
                     0,1";
 
@@ -167,7 +167,8 @@ class TweetAux{
 
             // execute query
             if($stmtHistory->execute()){
-                return true;
+
+               return true;
             }
             return false;
 
@@ -190,7 +191,6 @@ class TweetAux{
             $stmtRowUser->bindParam(1, $this->userAPIid);
 
             $stmtRowUser->execute();
-            //echo 'console.log('. json_encode( $this ) .')';
 
             // get retrieved row
             $rowUser = $stmtRowUser->fetch(PDO::FETCH_ASSOC);
@@ -224,7 +224,7 @@ class TweetAux{
 
             // execute query
             if($stmt->execute()){
-
+                
                 
                 $this->id_tweet = $this->conn->lastInsertId();
                 
@@ -246,9 +246,31 @@ class TweetAux{
                     $stmtHistory->bindParam(":favorites", $this->favorites);
                     $stmtHistory->bindParam(":replies", $this->replies);
                     
+
                 // execute query
                 if($stmtHistory->execute()){
-                    return true;
+
+
+                    $queryMedia = "INSERT INTO
+                        " . $this->tweet_media . "
+                        SET
+                        id_tweet=:id_tweet, 
+                        tweet_url=:tweet_url, type=:type ";
+
+                    // prepare query
+                    $stmtMedia = $this->conn->prepare($queryMedia);
+                    
+                    // bind values
+                    $stmtMedia->bindParam(":id_tweet", $this->id_tweet);
+                    $stmtMedia->bindParam(":tweet_url", $this->tweet_url);
+                    $stmtMedia->bindParam(":type", $this->type);
+
+
+                    if($stmtMedia->execute()){
+                        return true;
+                    }
+                    return false;
+
                 }
                 return false;
             }
